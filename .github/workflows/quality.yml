@@ -25,7 +25,6 @@ jobs:
         with:
           output: results.sarif
           format: sarif
-          tool: gosec
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
 
