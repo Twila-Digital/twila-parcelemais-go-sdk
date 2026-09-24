@@ -158,6 +158,20 @@ type Webhook struct {
 	AuthenticationType int    `json:"tipoAutenticacao"`
 }
 
+type WebhookAudit struct {
+	ID         string `json:"id"`
+	Type       int    `json:"tipo"`
+	Request    string `json:"requisicao"`
+	Response   string `json:"resposta"`
+	StatusCode int    `json:"statusCode"`
+	CreatedAt  string `json:"dataCriacao"`
+}
+
+type PagedWebhookAudits struct {
+	Items  []WebhookAudit `json:"itens"`
+	Pagina Pagina         `json:"pagina"`
+}
+
 type OrderWebhookEvent struct {
 	OrderID    string `json:"id_pedido"`
 	StatusEnum int    `json:"enum_status"`
@@ -199,7 +213,7 @@ type CreateEstablishmentRequest struct {
 	DisbursementModel int                      `json:"modeloDesembolso"`
 	Owner             EstablishmentOwner       `json:"responsavel"`
 	BankAccount       EstablishmentBankAccount `json:"contaBancaria"`
-	Address           *EstablishmentAddress    `json:"endereco,omitempty"`
+	Address           EstablishmentAddress     `json:"endereco"`
 }
 
 type Establishment struct {

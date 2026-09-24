@@ -63,13 +63,13 @@ O client expõe um struct por recurso:
 | `client.Orders` | `Create`, `Get`, `List`, `StartCdcSale`, `ImportInvoice` |
 | `client.Simulations` | `SimulateInstallments`, `SimulateValues` |
 | `client.Customers` | `Get`, `List` |
-| `client.Webhooks` | `Create`, `List`, `Update`, `Delete` |
+| `client.Webhooks` | `Create`, `List`, `ListAudit`, `Update`, `Delete` |
 
 Todo método recebe `context.Context` como primeiro argumento (idiomático em Go, permite cancelamento/timeout por chamada além do timeout total configurado no client).
 
 ## Paginação
 
-`Orders.List(...)` e `Customers.List(...)` retornam `*PagedResult[T]` (genérico) — sem auto-paginação, você controla explicitamente o avanço de página:
+`Orders.List(...)`, `Customers.List(...)` e `Webhooks.ListAudit(...)` retornam `*PagedResult[T]` (genérico) — sem auto-paginação, você controla explicitamente o avanço de página:
 
 ```go
 page, err := client.Orders.List(ctx, parcelemais.ListOrdersRequest{Page: 1, PageSize: 20})
