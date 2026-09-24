@@ -63,6 +63,7 @@ O client expõe um struct por recurso:
 | `client.Orders` | `Create`, `Get`, `List`, `StartCdcSale`, `ImportInvoice` |
 | `client.Simulations` | `SimulateInstallments`, `SimulateValues` |
 | `client.Customers` | `Get`, `List` |
+| `client.Establishments` | `Create`, `Get`, `List`, `Update`, `UpdateBankAccount`, `Activate`, `Deactivate` |
 | `client.Webhooks` | `Create`, `List`, `ListAudit`, `Update`, `Delete` |
 
 Todo método recebe `context.Context` como primeiro argumento (idiomático em Go, permite cancelamento/timeout por chamada além do timeout total configurado no client).
