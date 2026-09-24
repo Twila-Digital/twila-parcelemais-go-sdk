@@ -12,10 +12,11 @@ import (
 // por múltiplas goroutines — reaproveite-a como singleton na aplicação (não crie uma
 // por requisição); ela mantém o cache do token de acesso e o estado do circuit breaker.
 type Client struct {
-	Orders      *OrdersClient
-	Simulations *SimulationsClient
-	Customers   *CustomersClient
-	Webhooks    *WebhooksClient
+	Orders         *OrdersClient
+	Simulations    *SimulationsClient
+	Customers      *CustomersClient
+	Establishments *EstablishmentsClient
+	Webhooks       *WebhooksClient
 }
 
 // NewClient valida options e constrói um Client pronto para uso.
@@ -48,9 +49,10 @@ func NewClient(options ClientOptions) (*Client, error) {
 	)
 
 	return &Client{
-		Orders:      &OrdersClient{executor: executor, invoiceUploadAttemptTimeout: resolved.resilience.InvoiceUploadAttemptTimeout},
-		Simulations: &SimulationsClient{executor: executor},
-		Customers:   &CustomersClient{executor: executor},
-		Webhooks:    &WebhooksClient{executor: executor},
+		Orders:         &OrdersClient{executor: executor, invoiceUploadAttemptTimeout: resolved.resilience.InvoiceUploadAttemptTimeout},
+		Simulations:    &SimulationsClient{executor: executor},
+		Customers:      &CustomersClient{executor: executor},
+		Establishments: &EstablishmentsClient{executor: executor},
+		Webhooks:       &WebhooksClient{executor: executor},
 	}, nil
 }

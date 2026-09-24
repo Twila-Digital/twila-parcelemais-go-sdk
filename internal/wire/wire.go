@@ -163,3 +163,67 @@ type OrderWebhookEvent struct {
 	StatusEnum int    `json:"enum_status"`
 	Status     string `json:"status"`
 }
+
+type EstablishmentOwner struct {
+	Name  string `json:"nome"`
+	Email string `json:"email"`
+	Phone string `json:"celular"`
+}
+
+type EstablishmentBankAccount struct {
+	BankNumber     string `json:"banco"`
+	AgencyNumber   string `json:"agencia"`
+	AgencyDigit    string `json:"digitoAgencia"`
+	AccountNumber  string `json:"conta"`
+	AccountDigit   string `json:"digitoConta"`
+	AccountType    int    `json:"tipoConta"`
+	HolderName     string `json:"nomeTitular,omitempty"`
+	HolderDocument string `json:"documentoTitular,omitempty"`
+}
+
+type EstablishmentAddress struct {
+	Street     string `json:"rua"`
+	Number     string `json:"numero"`
+	Complement string `json:"complemento,omitempty"`
+	District   string `json:"bairro"`
+	City       string `json:"cidade"`
+	State      string `json:"estado"`
+	ZipCode    string `json:"cep"`
+	Country    string `json:"pais,omitempty"`
+}
+
+type CreateEstablishmentRequest struct {
+	Document          string                   `json:"documento"`
+	LegalName         string                   `json:"razaoSocial"`
+	TradeName         string                   `json:"nomeFantasia"`
+	DisbursementModel int                      `json:"modeloDesembolso"`
+	Owner             EstablishmentOwner       `json:"responsavel"`
+	BankAccount       EstablishmentBankAccount `json:"contaBancaria"`
+	Address           *EstablishmentAddress    `json:"endereco,omitempty"`
+}
+
+type Establishment struct {
+	EstablishmentID   string                    `json:"estabelecimentoId"`
+	Document          string                    `json:"documento"`
+	LegalName         string                    `json:"razaoSocial"`
+	TradeName         string                    `json:"nomeFantasia"`
+	IsActive          bool                      `json:"ativa"`
+	Owner             EstablishmentOwner        `json:"responsavel"`
+	DisbursementModel *int                      `json:"modeloDesembolso,omitempty"`
+	BankAccount       *EstablishmentBankAccount `json:"contaBancaria,omitempty"`
+	Address           *EstablishmentAddress     `json:"endereco,omitempty"`
+}
+
+type CreateEstablishmentResponse struct {
+	EstablishmentID string `json:"estabelecimentoId"`
+}
+
+type UpdateEstablishmentRequest struct {
+	TradeName         string                `json:"nomeFantasia"`
+	DisbursementModel *int                  `json:"modeloDesembolso,omitempty"`
+	Address           *EstablishmentAddress `json:"endereco,omitempty"`
+}
+
+type UpdateEstablishmentStatusRequest struct {
+	IsActive bool `json:"ativa"`
+}
