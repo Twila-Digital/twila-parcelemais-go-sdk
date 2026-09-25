@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -201,5 +202,58 @@ func TestWebhooksListAuditErrorMapsToAPIError(t *testing.T) {
 	}
 	if apiErr.StatusCode != http.StatusBadRequest {
 		t.Fatalf("StatusCode incorreto: %d", apiErr.StatusCode)
+	}
+}
+
+func TestWebhooksListAuditMalformedResponseReturnsError(t *testing.T) {
+	client := newTestClient(t, func(mux *http.ServeMux) {
+		mux.HandleFunc("/v1/webhooks/auditoria", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("{isto não é json"))
+		})
+	})
+
+	_, err := client.Webhooks.ListAudit(context.Background(), parcelemais.ListWebhookAuditRequest{})
+	if err == nil {
+		t.Fatal("esperava erro ao desserializar resposta malformada, veio nil")
+	}
+}
+
+func TestWebhooksListAuditNetworkErrorPropagates(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/authentication/accesstoken", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"token_de_acesso":    "test-token",
+			"expira_em_segundos": 3600,
+			"tipo_de_token":      "Bearer",
+		})
+	})
+	mux.HandleFunc("/v1/webhooks", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, []interface{}{})
+	})
+	server := httptest.NewServer(mux)
+
+	resilience := fastResilienceOptions()
+	client, err := parcelemais.NewClient(parcelemais.ClientOptions{
+		ClientID:     "test-client-id",
+		ClientSecret: "test-client-secret",
+		BaseURL:      server.URL + "/",
+		Resilience:   &resilience,
+	})
+	if err != nil {
+		t.Fatalf("NewClient falhou: %v", err)
+	}
+
+	// Aquece o cache de token com uma chamada bem-sucedida, pra que o erro de rede a
+	// seguir aconteça na chamada ao recurso (auditoria), não na geração do token.
+	if _, err := client.Webhooks.List(context.Background()); err != nil {
+		t.Fatalf("aquecimento do token falhou: %v", err)
+	}
+
+	server.Close()
+
+	if _, err := client.Webhooks.ListAudit(context.Background(), parcelemais.ListWebhookAuditRequest{}); err == nil {
+		t.Fatal("esperava erro de rede após fechar o servidor, veio nil")
 	}
 }

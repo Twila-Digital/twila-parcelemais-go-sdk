@@ -295,6 +295,40 @@ func TestEstablishmentsUpdateSendsOnlyEditableFields(t *testing.T) {
 	}
 }
 
+func TestEstablishmentsUpdateSendsAddressWhenSet(t *testing.T) {
+	var body map[string]interface{}
+
+	client := newTestClient(t, func(mux *http.ServeMux) {
+		mux.HandleFunc("/v1/establishment/"+establishmentID, func(w http.ResponseWriter, r *http.Request) {
+			body = decodeBody(t, r)
+			w.WriteHeader(http.StatusOK)
+		})
+	})
+
+	err := client.Establishments.Update(context.Background(), establishmentID, parcelemais.UpdateEstablishmentRequest{
+		TradeName: "Loja Centro Matriz",
+		Address: &parcelemais.EstablishmentAddress{
+			Street:   "Rua Exemplo",
+			Number:   "100",
+			District: "Centro",
+			City:     "São Paulo",
+			State:    "SP",
+			ZipCode:  "01310100",
+		},
+	})
+	if err != nil {
+		t.Fatalf("erro inesperado: %v", err)
+	}
+
+	address, ok := body["endereco"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("endereco ausente ou em formato inesperado: %v", body["endereco"])
+	}
+	if address["rua"] != "Rua Exemplo" {
+		t.Fatalf("rua incorreta: %v", address["rua"])
+	}
+}
+
 func TestEstablishmentsUpdateBankAccountUsesOwnEndpoint(t *testing.T) {
 	var body map[string]interface{}
 
