@@ -54,6 +54,9 @@ type EstablishmentAddress struct {
 	Country    string
 }
 
+// CreateEstablishmentRequest cria um estabelecimento. Address é obrigatório na criação e
+// sempre enviado: Street, Number, District, City, State e ZipCode são obrigatórios;
+// Complement e Country são opcionais (omitidos quando vazios).
 type CreateEstablishmentRequest struct {
 	Document          string
 	LegalName         string
@@ -61,7 +64,7 @@ type CreateEstablishmentRequest struct {
 	DisbursementModel DisbursementModel
 	Owner             EstablishmentOwner
 	BankAccount       EstablishmentBankAccount
-	Address           *EstablishmentAddress
+	Address           EstablishmentAddress
 }
 
 type CreateEstablishmentResult struct {
@@ -103,7 +106,7 @@ func (c *EstablishmentsClient) Create(ctx context.Context, req CreateEstablishme
 		DisbursementModel: int(req.DisbursementModel),
 		Owner:             wire.EstablishmentOwner{Name: req.Owner.Name, Email: req.Owner.Email, Phone: req.Owner.Phone},
 		BankAccount:       bankAccountToWire(req.BankAccount),
-		Address:           addressToWire(req.Address),
+		Address:           addressValueToWire(req.Address),
 	}
 
 	raw, err := c.executor.Post(ctx, "v1/establishment", wireReq, 0)
@@ -232,7 +235,12 @@ func addressToWire(address *EstablishmentAddress) *wire.EstablishmentAddress {
 		return nil
 	}
 
-	return &wire.EstablishmentAddress{
+	wireAddress := addressValueToWire(*address)
+	return &wireAddress
+}
+
+func addressValueToWire(address EstablishmentAddress) wire.EstablishmentAddress {
+	return wire.EstablishmentAddress{
 		Street:     address.Street,
 		Number:     address.Number,
 		Complement: address.Complement,

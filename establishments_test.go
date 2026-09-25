@@ -46,7 +46,7 @@ func establishmentWire() map[string]interface{} {
 	}
 }
 
-func newCreateEstablishmentRequest(address *parcelemais.EstablishmentAddress) parcelemais.CreateEstablishmentRequest {
+func newCreateEstablishmentRequest() parcelemais.CreateEstablishmentRequest {
 	return parcelemais.CreateEstablishmentRequest{
 		Document:          "12345678000199",
 		LegalName:         "Loja Centro LTDA",
@@ -64,7 +64,14 @@ func newCreateEstablishmentRequest(address *parcelemais.EstablishmentAddress) pa
 			AccountDigit:  "0",
 			AccountType:   parcelemais.BankAccountTypeCurrent,
 		},
-		Address: address,
+		Address: parcelemais.EstablishmentAddress{
+			Street:   "Rua Exemplo",
+			Number:   "100",
+			District: "Centro",
+			City:     "São Paulo",
+			State:    "SP",
+			ZipCode:  "01310100",
+		},
 	}
 }
 
@@ -96,16 +103,7 @@ func TestEstablishmentsCreateSendsWireBodyAndReturnsID(t *testing.T) {
 		})
 	})
 
-	address := parcelemais.EstablishmentAddress{
-		Street:   "Rua Exemplo",
-		Number:   "100",
-		District: "Centro",
-		City:     "São Paulo",
-		State:    "SP",
-		ZipCode:  "01310100",
-	}
-
-	result, err := client.Establishments.Create(context.Background(), newCreateEstablishmentRequest(&address))
+	result, err := client.Establishments.Create(context.Background(), newCreateEstablishmentRequest())
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
 	}
@@ -126,26 +124,19 @@ func TestEstablishmentsCreateSendsWireBodyAndReturnsID(t *testing.T) {
 	if !ok || owner["celular"] != "+5511999998888" {
 		t.Fatalf("responsavel incorreto: %v", body["responsavel"])
 	}
-	if _, ok := body["endereco"].(map[string]interface{}); !ok {
+	address, ok := body["endereco"].(map[string]interface{})
+	if !ok {
 		t.Fatalf("endereco deveria ter sido enviado: %v", body["endereco"])
 	}
-}
-
-func TestEstablishmentsCreateWithoutAddressOmitsIt(t *testing.T) {
-	var body map[string]interface{}
-
-	client := newTestClient(t, func(mux *http.ServeMux) {
-		mux.HandleFunc("/v1/establishment", func(w http.ResponseWriter, r *http.Request) {
-			body = decodeBody(t, r)
-			writeJSON(w, http.StatusOK, map[string]interface{}{"estabelecimentoId": establishmentID})
-		})
-	})
-
-	if _, err := client.Establishments.Create(context.Background(), newCreateEstablishmentRequest(nil)); err != nil {
-		t.Fatalf("erro inesperado: %v", err)
+	if address["rua"] != "Rua Exemplo" || address["numero"] != "100" || address["bairro"] != "Centro" ||
+		address["cidade"] != "São Paulo" || address["estado"] != "SP" || address["cep"] != "01310100" {
+		t.Fatalf("endereco incorreto: %v", address)
 	}
-	if _, present := body["endereco"]; present {
-		t.Fatalf("endereco não deveria estar presente: %v", body["endereco"])
+	if _, present := address["complemento"]; present {
+		t.Fatalf("complemento vazio não deveria ser enviado: %v", address["complemento"])
+	}
+	if _, present := address["pais"]; present {
+		t.Fatalf("pais vazio não deveria ser enviado: %v", address["pais"])
 	}
 }
 
@@ -304,6 +295,40 @@ func TestEstablishmentsUpdateSendsOnlyEditableFields(t *testing.T) {
 	}
 }
 
+func TestEstablishmentsUpdateSendsAddressWhenSet(t *testing.T) {
+	var body map[string]interface{}
+
+	client := newTestClient(t, func(mux *http.ServeMux) {
+		mux.HandleFunc("/v1/establishment/"+establishmentID, func(w http.ResponseWriter, r *http.Request) {
+			body = decodeBody(t, r)
+			w.WriteHeader(http.StatusOK)
+		})
+	})
+
+	err := client.Establishments.Update(context.Background(), establishmentID, parcelemais.UpdateEstablishmentRequest{
+		TradeName: "Loja Centro Matriz",
+		Address: &parcelemais.EstablishmentAddress{
+			Street:   "Rua Exemplo",
+			Number:   "100",
+			District: "Centro",
+			City:     "São Paulo",
+			State:    "SP",
+			ZipCode:  "01310100",
+		},
+	})
+	if err != nil {
+		t.Fatalf("erro inesperado: %v", err)
+	}
+
+	address, ok := body["endereco"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("endereco ausente ou em formato inesperado: %v", body["endereco"])
+	}
+	if address["rua"] != "Rua Exemplo" {
+		t.Fatalf("rua incorreta: %v", address["rua"])
+	}
+}
+
 func TestEstablishmentsUpdateBankAccountUsesOwnEndpoint(t *testing.T) {
 	var body map[string]interface{}
 
@@ -367,7 +392,7 @@ func TestEstablishmentsCreateConflictMapsToAPIError(t *testing.T) {
 		})
 	})
 
-	_, err := client.Establishments.Create(context.Background(), newCreateEstablishmentRequest(nil))
+	_, err := client.Establishments.Create(context.Background(), newCreateEstablishmentRequest())
 	if err == nil {
 		t.Fatal("esperava erro")
 	}
